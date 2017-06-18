@@ -2,6 +2,8 @@
 from app import db
 from sqlalchemy.dialects.mysql import DOUBLE
 
+from dateutil.parser import parse
+
 class gpsposition(db.Model):
 	id 				= db.Column(db.Integer, primary_key = True)
 	gps_latitude	= db.Column(DOUBLE())
@@ -31,7 +33,7 @@ class gpsposition(db.Model):
 		self.gps_longitude	= gpsdata.get('lon',0)
 		self.gps_altitude	= gpsdata.get('alt',0)
 		self.gps_speed		= gpsdata.get('speed',0)
-		self.gps_time		= gpsdata.get('time',0)
+		self.gps_time		= parse(gpsdata.get('time','1990-01-01'))
 		self.gps_ept		= gpsdata.get('ept',0)
 		self.gps_epx		= gpsdata.get('epx',0)
 		self.gps_epy		= gpsdata.get('epy',0)
@@ -49,7 +51,7 @@ class gpsjsondata(db.Model):
 	client_name		= db.Column(db.String(1024) , index = True)
 	clinet_ip		= db.Column(db.String(45) , index = True)  ## 45 is the max length of an IPv6 string
 	upload_time		= db.Column(db.DATETIME, index = True)
-	jsondata		= db.Column(db.JSON, index = True)
+	jsondata		= db.Column(db.JSON)
 	
 	def __init__(self, jsondata, client_name, client_ip, upload_time):
 		self.client_name	= client_name
