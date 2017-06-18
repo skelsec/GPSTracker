@@ -136,13 +136,13 @@ class ReportHandler(multiprocessing.Process):
 		
 class UploadGPSData():
 	def __init__(self, config):
-		self.url = config['UPLOADER']['UPLOAD_URL']
+		self.url = config['UPLOADER']['UPLOAD_URL'] + config['UPLOADER']['CLIENT_NAME']
 		self.clientCert = config['UPLOADER']['CLIENT_CERT']
 		self.clientKey = config['UPLOADER']['CLIENT_KEY']
 		self.timeout = config['UPLOADER']['TIMEOUT']
 		
 	def upload(self, data):
-		if self.clientCert == '' or self.clientKey == '':
+		if self.url[:5].lower() != 'https' or self.clientCert == '' or self.clientKey == '':
 			res = requests.post(
 					url=self.url,
                     data=data,
@@ -164,10 +164,9 @@ class UploadGPSData():
 		
 		
 class GPSTracker():
-	def __init__(self, configfile = '', config = ''):
+	def __init__(self, config):
 		self.reportQueue = multiprocessing.Queue()
 		self.logQueue = multiprocessing.Queue()
-		self.configfile = configfile
 		self.config = config
 
 		
@@ -191,21 +190,38 @@ class GPSTracker():
 			
 			
 if __name__ == '__main__':
+	import argparse
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-v", "--verbose", help="Increase output verbosity", action="store_true")
+	parser.add_argument("-c", "--config", help="Config file", default = '')
+	parser.add_argument("-u", type = int, help= 'Upload fequency', default = 60)
+	parser.add_argument("-g", help= 'Directory to keep GPS data in', default = './')
+	parser.add_argument("-w", help= 'Keep local copy of GPS data', action="store_true")
+	parser.add_argument("-f", help= 'Directory to store failed uploads', default = './failed/')
+	parser.add_argument("-r", type = int, help= 'Reupload  retry frequency', default = 60)
+	parser.add_argument("--upload-url",  help= 'GPSTracker web service URL', default = 'http://127.0.0.1/')
+	parser.add_argument("--client-cert", help= 'Client cert file for upload SSL auth', default = './certs/client.pem')
+	parser.add_argument("--client-key",  help= 'Client key file for upload SSL auth', default = './certs/client.key')
+	parser.add_argument("-t", "--timeout", type = int, help= 'Data file upload timeout', default = 10)
 	
-	config = {}
-	config['REPORTER'] = {}
-	config['UPLOADER'] = {}
-	config['REPORTER']['UPLOADER_FREQ'] = 10
-	config['REPORTER']['GPSDATA_DIR']   = '/root/gpsdata'
-	config['REPORTER']['WRITE_GPSDATA_FILE'] = True
-	config['REPORTER']['FAILED_UPLOAD_DIR'] = '/root/gpsdata/failed'
-	config['REPORTER']['REUPLOADER_FREQ'] = 15
-	config['UPLOADER']['UPLOAD_URL'] = 'http://192.168.4.70:8080/gpstracker/upload/testgps'
-	config['UPLOADER']['CLIENT_CERT'] = ''
-	config['UPLOADER']['CLIENT_KEY']  = ''
-	config['UPLOADER']['TIMEOUT']     = 20
-
-	print config		
+	args = parser.parse_args()
+	if args.config != '':
+		with open(args.config, 'rb') as f:
+			config = json.loads(f.read())
+	
+	else:
+		config = {}
+		config['REPORTER'] = {}
+		config['UPLOADER'] = {}
+		config['REPORTER']['UPLOADER_FREQ'] = args.u
+		config['REPORTER']['GPSDATA_DIR']   = args.g
+		config['REPORTER']['WRITE_GPSDATA_FILE'] = args.w
+		config['REPORTER']['FAILED_UPLOAD_DIR'] = args.f
+		config['REPORTER']['REUPLOADER_FREQ'] = args.r
+		config['UPLOADER']['UPLOAD_URL'] = args.upload_url
+		config['UPLOADER']['CLIENT_CERT'] = args.client-cert
+		config['UPLOADER']['CLIENT_KEY']  = args.client-key
+		config['UPLOADER']['TIMEOUT']     = args.t
 	
 	
 	gpst = GPSTracker(config = config)

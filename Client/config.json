@@ -1,0 +1,18 @@
+{
+	"UPLOADER": 
+	{
+		"CLIENT_NAME": "testgps",
+		"UPLOAD_URL": "http://192.168.4.70:8080/gpstracker/upload/", 
+		"CLIENT_CERT": "", 
+		"TIMEOUT": 20, 
+		"CLIENT_KEY": ""
+	}, 
+	"REPORTER": 
+	{
+		"FAILED_UPLOAD_DIR": "/root/gpsdata/failed", 
+		"REUPLOADER_FREQ": 15, 
+		"GPSDATA_DIR": "/root/gpsdata", 
+		"UPLOADER_FREQ": 10, 
+		"WRITE_GPSDATA_FILE": true
+	}
+}
