@@ -1,32 +1,46 @@
-import gps
+#!/usr/bin/env python
 import time
+import threading
 import multiprocessing
-import StringIO
+import cStringIO
 import gzip
 from datetime import datetime
 import glob
 import os
+import json
+import shutil
 
+
+import gps
 import requests
 
+
+class DictWrapperEncoder(json.JSONEncoder):
+	def default(self, obj):
+		if isinstance(obj, gps.dictwrapper):
+			return dict(obj)
+		
+		return json.JSONEncoder.default(self.obj)
+
 class GPSPoller(multiprocessing.Process):
-	def __init__(self, reportQueue, logQueue):
+	def __init__(self, reportQueue, logQueue, config):
 		multiprocessing.Process.__init__(self)
 		self.reportQueue = reportQueue
 		self.logQueue = logQueue
 		self.gpsd = ''
 		
 	def setup(self):
-		self.gpsd = gps.gps(mode=WATCH_ENABLE|WATCH_JSON)
-		
-	def self.log(self, level, message):
+		self.gpsd = gps.gps()
+		self.gpsd.stream(gps.WATCH_ENABLE|gps.WATCH_NEWSTYLE)
+
+	def log(self, level, message):
 		self.logQueue.put((level, self.name, message))
 		
 	def run(self):
 		self.setup()
 		while True:
-			for gpsdata in gpsd.next():
-				self.reportQueue.put(gpsdata)
+			for gpsdata in self.gpsd:
+				self.reportQueue.put(json.dumps(gpsdata, cls=DictWrapperEncoder))
 				
 
 class Logger(multiprocessing.Process):
@@ -38,7 +52,7 @@ class Logger(multiprocessing.Process):
 	def setup(self):
 		return 1
 		
-	def self.log(self, level, message):
+	def log(self, level, message):
 		self.logQueue.put((level, self.name, message))
 		
 	def run(self):
@@ -66,7 +80,7 @@ class ReportHandler(multiprocessing.Process):
 		threading.Timer(self.config['REPORTER']['UPLOADER_FREQ'], self.webSenderThread).start()
 		threading.Timer(self.config['REPORTER']['REUPLOADER_FREQ'], self.reuploaderThread).start()
 		
-	def self.log(self, level, message):
+	def log(self, level, message):
 		self.logQueue.put((level, self.name, message))
 		
 		
@@ -79,25 +93,27 @@ class ReportHandler(multiprocessing.Process):
 				self.gpsDataBuffer.append(gpsdata)
 	
 	def webSenderThread(self):
-		gzipdata = StringIO.StringIO()
+		gzipdata = cStringIO.StringIO()
 		with self.gpsDataBufferLock:
 			with gzip.GzipFile(fileobj=gzipdata, mode="wb") as f:
 				for gpsdata in self.gpsDataBuffer:
 					f.write(gpsdata + '\r\n')
 			
 			self.gpsDataBuffer = []
-		
+			gzipdata.seek(0)
 		try:
 			uploader = UploadGPSData(self.config)
-			uploader.upload(gzipdata)
+			uploader.upload(gzipdata.getvalue())
 		except Exception as e:
-			self.log('EXCEPTION', "Error while uploading data to server! Error data:" % (str(e)))
-			with open(os.path.join(self.config['REPORTER']['FAILED_UPLOAD_DIR'],'gpsdata_%s.gzip' % (datetime.utcnow()))) as f:
-				f.write(gzipdata)
+			self.log('EXCEPTION', "Error while uploading data to server! Error data: %s" % (str(e)))
+			with open(os.path.join(self.config['REPORTER']['FAILED_UPLOAD_DIR'],'gpsdata_%s.gzip' % (datetime.utcnow().strftime("%Y%m%d-%H%M%S"))),'wb') as f:
+				gzipdata.seek(0)
+				shutil.copyfileobj(gzipdata,f)
 				
 		if self.config['REPORTER']['WRITE_GPSDATA_FILE']:
-			with open(os.path.join(self.config['REPORTER']['GPSDATA_DIR'],'gpsdata_%s.gzip' % (datetime.utcnow()))) as f:
-				f.write(gzipdata)
+			with open(os.path.join(self.config['REPORTER']['GPSDATA_DIR'],'gpsdata_%s.gzip' % (datetime.utcnow().strftime("%Y%m%d-%H%M%S"))),'wb') as f:
+				gzipdata.seek(0)
+				shutil.copyfileobj(gzipdata,f)
 				
 		threading.Timer(self.config['REPORTER']['UPLOADER_FREQ'], self.webSenderThread).start()
 			
@@ -108,7 +124,7 @@ class ReportHandler(multiprocessing.Process):
 				data = f.read()
 				try:
 					uploader = UploadGPSData(self.config)
-					uploader.upload(gzipdata)
+					uploader.upload(data)
 				except Exception as e:
 					break
 			
@@ -140,19 +156,20 @@ class UploadGPSData():
 					timeout=self.timeout,
 					cert=(self.clientCert, self.clientKey))
 			
-		if r.status_code != requests.codes.ok:
-			raise Exception("Server responsed with error! Code: %s" % (r.status_code,) )
+		if res.status_code != requests.codes.ok:
+			raise Exception("Server responsed with error! Code: %s" % (res.status_code,) )
 		
 		return
 		
 		
 		
-class GPSTracker()
-	def __init__(self, configfile):
+class GPSTracker():
+	def __init__(self, configfile = '', config = ''):
 		self.reportQueue = multiprocessing.Queue()
 		self.logQueue = multiprocessing.Queue()
 		self.configfile = configfile
-		self.config = ''
+		self.config = config
+
 		
 	def setup(self):
 		self.logger = Logger(self.logQueue, self.config)
@@ -175,18 +192,22 @@ class GPSTracker()
 			
 if __name__ == '__main__':
 	
-	config['REPORTER']['UPLOADER_FREQ']
-	config['REPORTER']['GPSDATA_DIR']
-	config['REPORTER']['WRITE_GPSDATA_FILE']
-	config['REPORTER']['FAILED_UPLOAD_DIR']
-	config['REPORTER']['REUPLOADER_FREQ']
-	config['UPLOADER']['UPLOAD_URL']
-	config['UPLOADER']['CLIENT_CERT']
-	config['UPLOADER']['CLIENT_KEY']
-	config['UPLOADER']['TIMEOUT']
-		
+	config = {}
+	config['REPORTER'] = {}
+	config['UPLOADER'] = {}
+	config['REPORTER']['UPLOADER_FREQ'] = 10
+	config['REPORTER']['GPSDATA_DIR']   = '/root/gpsdata'
+	config['REPORTER']['WRITE_GPSDATA_FILE'] = True
+	config['REPORTER']['FAILED_UPLOAD_DIR'] = '/root/gpsdata/failed'
+	config['REPORTER']['REUPLOADER_FREQ'] = 15
+	config['UPLOADER']['UPLOAD_URL'] = 'http://192.168.4.70:8080/gpstracker/upload/testgps'
+	config['UPLOADER']['CLIENT_CERT'] = ''
+	config['UPLOADER']['CLIENT_KEY']  = ''
+	config['UPLOADER']['TIMEOUT']     = 20
+
+	print config		
 	
 	
-	gpst = GPSTracker(config)
+	gpst = GPSTracker(config = config)
 	gpst.run()
 	
