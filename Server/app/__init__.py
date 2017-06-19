@@ -10,7 +10,7 @@ basedir = str(p.parents[1])
 
 
 pr = PurePath(basedir)
-static_folder =str(pr.joinpath('static/'))
+static_folder =str(pr.joinpath('static'))
 
 app = Flask(__name__, static_folder = static_folder ,static_url_path='')
 app.config.from_pyfile('config.py')
