@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from app import app, db
-from flask import request
+from flask import request, send_from_directory
 from flask_restful import Resource, Api
 from sqlalchemy import text
 import json
@@ -116,3 +116,7 @@ class GetPosition(Resource):
 		print len(posList)
 
 		return GPSDataResponse(posList).toDict(), 200
+
+@app.route('/<path:path>')
+def serve_page(path):
+    return send_from_directory(app.config['WEBPAGE_DIR'], path)

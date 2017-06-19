@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Resource, Api
 from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="/opt/GPSTracker/Server/static")
 app.config.from_pyfile('config.py')
 CORS(app)
 api = Api(app)
