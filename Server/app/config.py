@@ -1,7 +1,7 @@
 from pathlib2 import Path, PurePath
 
 
-p = pathlib.Path(__file__)
+p = Path(__file__)
 basedir = str(p.parents[1])
 
 
