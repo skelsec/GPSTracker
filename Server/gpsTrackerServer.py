@@ -116,7 +116,7 @@ class GetPosition(Resource):
 @app.route('/scritps/<path:path>')
 def serve_page(path):
 	print path
-	return send_from_directory(app.config['SCRIPTS_DIR'], path)
+	return send_from_directory(app.config['WEBPAGE_DIR'], path)
 
 
 
