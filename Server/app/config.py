@@ -1,9 +1,18 @@
-import os
+from pathlib2 import Path, PurePath
 
-basedir = os.path.join(os.path.abspath(os.path.dirname(__file__)),'..')
 
-WEBPAGE_DIR = os.path.join(basedir,'static')
-SCRIPTS_DIR = os.path.join(WEBPAGE_DIR,'scritps')
+p = pathlib.Path(__file__)
+basedir = str(p.parents[1])
+
+
+pr = PurePath(basedir)
+pr.joinpath('static')
+WEBPAGE_DIR =str(pr)
+pr = PurePath(basedir)
+pr.joinpath('scritps')
+SCRIPTS_DIR = str(pr)
+
+
 
 HOST='0.0.0.0'
 PORT=8080
