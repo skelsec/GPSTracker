@@ -6,11 +6,8 @@ basedir = str(p.parents[1])
 
 
 pr = PurePath(basedir)
-pr.joinpath('static')
-WEBPAGE_DIR =str(pr)
-pr = PurePath(basedir)
-pr.joinpath('scritps')
-SCRIPTS_DIR = str(pr)
+WEBPAGE_DIR =str(pr.joinpath('static'))
+SCRIPTS_DIR = str(pr.joinpath('scritps'))
 
 
 
