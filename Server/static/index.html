@@ -2,8 +2,15 @@
 <html>
   <head>
   <meta charset="UTF-8">
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCbh6_Jhpzj13qeM6Ujw_vjJZOK85o3SsI&callback=initMap"></script>
+  <script type="text/javascript" src="/scritps/gpstracker.js"></script>
   
-  
+  <script>
+  window.onload = function(){
+	initMap();
+	refreshLatestCoordinate();
+	};
+  </script>
   
     <style>
       #map {
@@ -13,15 +20,16 @@
     </style>
   </head>
   <body>
-	<form name="dataform" action="javascript:clearMapAndGetNewPos()">
+	<form name="dataform" action="javascript:refreshLatestCoordinate()">
 		Car name:   <input type='text' id='client'    value="testgps"   /><br>
 		<input type="submit" value="Submit">
 	</form>
-	
-	<input type='text' id='lat'    value="0"   />
-	<input type='text' id='lng'    value="0"   />
-	<input type='text' id='elv'    value="0"   />
-	<input type='text' id='speed'  value="0"   />
+	<br>
+	gpslat  <input type='text' id='gpslat'    value="0"   /><br>
+	gpslng  <input type='text' id='gpslng'    value="0"   /><br>
+	gpselv  <input type='text' id='gpselv'    value="0"   /><br>
+	gpsspeed<input type='text' id='gpsspeed'  value="0"   /><br>
+	gpstime <input type='text' id='gpstime'   value="0"   /><br>
   
   
     <h3>My Google Maps Demo</h3>
@@ -29,6 +37,6 @@
     
 
 	
-  <script type="text/javascript" src="/scritps/gpstracker.js">
+  
   </body>
 </html>

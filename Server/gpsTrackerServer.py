@@ -76,7 +76,7 @@ class ClientReciever(Resource):
 
 class GetLatestPosition(Resource):
 	def get(self, client_name):
-		gpspos = gpsposition.query.filter_by(client_name = client_name).order_by(gpsposition.gps_time.desc()).first()
+		gpspos = gpsposition.query.filter_by(client_name = client_name).filter(gpsposition.gps_mode != 1).order_by(gpsposition.gps_time.desc()).first()
 		t = []
 		temp = {}
 		temp['lat'] = str(gpspos.gps_latitude)
@@ -94,13 +94,9 @@ class GetPosition(Resource):
 		start = parse(start_date)
 		end   = parse(end_date)
 		posList = []
-		query = text("SELECT * FROM ( SELECT @row := @row +1 AS rownum, :all "
-			     "FROM ( SELECT @row :=0) r, :tablename WHERE gps_time BETWEEN :start AND :end) ranked "
-			     "WHERE rownum %:interval = 1 ")
-
 		query = text(	"SELECT * FROM ("
 				" SELECT @row := @row +1 AS rownum, gpsposition.*"
-				" FROM ( SELECT @row :=0) r, gpsposition WHERE gps_time BETWEEN :start AND :end) ranked"
+				" FROM ( SELECT @row :=0) r, gpsposition WHERE gps_mode <> 1 AND gps_time BETWEEN :start AND :end) ranked"
 				" WHERE rownum %:interval = 1" )
 
 		#for gpspos in gpsposition.query.filter_by(client_name = client_name).filter(gpsposition.gps_time.between(start, end)).order_by(gpsposition.gps_time.desc()):
@@ -117,6 +113,25 @@ class GetPosition(Resource):
 
 		return GPSDataResponse(posList).toDict(), 200
 
-@app.route('/<path:path>')
+@app.route('/scritps/<path:path>')
 def serve_page(path):
-    return send_from_directory(app.config['WEBPAGE_DIR'], path)
+	print path
+	return send_from_directory(app.config['SCRIPTS_DIR'], path)
+
+
+
+@app.route('/')
+def root():
+    return app.send_static_file('index.html')	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

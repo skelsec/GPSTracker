@@ -3,6 +3,8 @@ import os
 basedir = os.path.join(os.path.abspath(os.path.dirname(__file__)),'..')
 
 WEBPAGE_DIR = os.path.join(basedir,'static')
+SCRIPTS_DIR = os.path.join(WEBPAGE_DIR,'scritps')
+
 HOST='0.0.0.0'
 PORT=8080
 SQLALCHEMY_DATABASE_URI = 'mysql://gps:gpsTrackerP@ssW0rd!@localhost:3306/gps'
