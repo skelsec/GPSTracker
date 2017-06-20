@@ -76,6 +76,7 @@ class ClientReciever(Resource):
 
 class GetLatestPosition(Resource):
 	def get(self, client_name):
+		print request.headers
 		gpspos = gpsposition.query.filter_by(client_name = client_name).filter(gpsposition.gps_mode != 1).order_by(gpsposition.gps_time.desc()).first()
 		t = []
 		temp = {}
